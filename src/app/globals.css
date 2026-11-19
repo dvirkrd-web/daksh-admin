@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #0a2a5e;
+  --color-navy-deep: #061c3f;
+  --color-brand-sky: #38bdf8;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  font-family:
+    ui-sans-system,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+}
+
+/* Keep internal-note text (stamped lines from the backend) readable. */
+.pre-lines {
+  white-space: pre-line;
+}
