@@ -135,9 +135,9 @@ export default function OrderDetailPage() {
     }
   }
 
-  /** UPI payment verified: the admin checked the UTR in the business
-   * UPI/bank app. The backend marks the payment captured and the order
-   * becomes received. */
+  /** UPI payment verified: the admin checked the payment proof (UTR or
+   * screenshot) in the business UPI/bank app. The backend marks the
+   * payment captured and the order becomes received. */
   async function verifyUpiPayment() {
     setUpiBusy(true);
     setUpiError(null);
@@ -159,8 +159,9 @@ export default function OrderDetailPage() {
     }
   }
 
-  /** UPI payment rejected: the UTR could not be found in the business
-   * account. The backend marks the payment failed and cancels the order. */
+  /** UPI payment rejected: the payment proof (UTR or screenshot) could
+   * not be matched in the business account. The backend marks the
+   * payment failed and cancels the order. */
   async function rejectUpiPayment() {
     setUpiBusy(true);
     setUpiError(null);
@@ -188,8 +189,9 @@ export default function OrderDetailPage() {
   const addr = order.address;
 
   // UPI (manual) payment awaiting verification: order is pending_payment
-  // and a payments row has method 'upi' with status 'created'. The UTR
-  // sits in gateway_payment_id (that is what the customer submitted).
+  // and a payments row has method 'upi' with status 'created'. The proof
+  // is the UTR in gateway_payment_id and/or the payment screenshot
+  // (screenshot_key + signed screenshot_url) — either may be present.
   const upiPayment = order.payments.find(
     (p) => p.method === "upi" && p.status === "created",
   );
@@ -362,6 +364,27 @@ export default function OrderDetailPage() {
                           </dd>
                         </span>
                       )}
+                      {p.screenshot_key && (
+                        <span>
+                          <dt className="inline font-semibold">
+                            Payment proof:{" "}
+                          </dt>
+                          <dd className="inline">
+                            {p.screenshot_url ? (
+                              <a
+                                href={p.screenshot_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-semibold text-navy underline underline-offset-2"
+                              >
+                                View payment screenshot
+                              </a>
+                            ) : (
+                              "Screenshot submitted (preview unavailable — storage not configured)"
+                            )}
+                          </dd>
+                        </span>
+                      )}
                       <span>
                         <dt className="inline font-semibold">Recorded: </dt>
                         <dd className="inline">
@@ -374,25 +397,56 @@ export default function OrderDetailPage() {
               </div>
             )}
 
-            {/* UPI (manual) payment — verify the UTR in your UPI/bank
-                app BEFORE confirming. Verifying marks the payment
-                captured and the order received; rejecting cancels it. */}
+            {/* UPI (manual) payment — verify the customer's proof (UTR
+                and/or payment screenshot) in your UPI/bank app BEFORE
+                confirming. Verifying marks the payment captured and the
+                order received; rejecting cancels it. */}
             {isUpiPending && upiPayment && (
               <div className="mt-4 rounded-xl bg-amber-50 px-4 py-3.5 ring-1 ring-amber-200">
                 <p className="text-sm font-bold text-amber-900">
                   UPI payment awaiting verification
                 </p>
-                <p className="mt-1 text-sm text-amber-800">
-                  Customer UTR:{" "}
-                  <span className="font-mono font-bold tracking-wide">
-                    {upiPayment.gateway_payment_id ?? "—"}
-                  </span>{" "}
-                  · Amount: {formatINR(upiPayment.amount_paise)}
-                </p>
+                {upiPayment.gateway_payment_id && (
+                  <p className="mt-1 text-sm text-amber-800">
+                    Customer UTR:{" "}
+                    <span className="font-mono font-bold tracking-wide">
+                      {upiPayment.gateway_payment_id}
+                    </span>{" "}
+                    · Amount: {formatINR(upiPayment.amount_paise)}
+                  </p>
+                )}
+                {upiPayment.screenshot_key && (
+                  <p className="mt-1 text-sm text-amber-800">
+                    Payment proof:{" "}
+                    {upiPayment.screenshot_url ? (
+                      <a
+                        href={upiPayment.screenshot_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-bold text-navy underline underline-offset-2"
+                      >
+                        View payment screenshot
+                      </a>
+                    ) : (
+                      <span className="font-semibold">
+                        screenshot submitted (preview unavailable — storage
+                        not configured)
+                      </span>
+                    )}{" "}
+                    · Amount: {formatINR(upiPayment.amount_paise)}
+                  </p>
+                )}
+                {!upiPayment.gateway_payment_id &&
+                  !upiPayment.screenshot_key && (
+                    <p className="mt-1 text-sm text-amber-800">
+                      No proof recorded · Amount:{" "}
+                      {formatINR(upiPayment.amount_paise)}
+                    </p>
+                  )}
                 <p className="mt-1 text-xs text-amber-700">
-                  Check this UTR and amount in your UPI/bank app first —
-                  only then press Verify. A fake or wrong UTR must be
-                  rejected.
+                  {upiPayment.gateway_payment_id
+                    ? "Check this UTR and amount in your UPI/bank app first — only then press Verify. A fake or wrong UTR must be rejected."
+                    : "Open the screenshot and match the amount and the receiver UPI ID with your UPI/bank app first — only then press Verify. A fake or edited screenshot must be rejected."}
                 </p>
                 {upiError && (
                   <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm font-medium text-rose-800">

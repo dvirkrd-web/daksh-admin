@@ -114,7 +114,9 @@ export interface Payment {
   id: string;
   gateway: string;
   gateway_order_id: string | null;
-  gateway_payment_id: string | null;
+  gateway_payment_id: string | null; // UTR for UPI payments
+  screenshot_key: string | null; // UPI screenshot proof (storage key)
+  screenshot_url: string | null; // time-limited signed URL, when available
   amount_paise: number;
   method: string | null;
   status: string; // created | authorized | captured | failed | refunded
